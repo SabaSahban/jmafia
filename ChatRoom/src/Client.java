@@ -22,14 +22,15 @@ public class Client {
         new Thread(serverConn).start();
 
         while(true) {
+
             System.out.println(">");
             String command = keyboard.readLine();
-
-            if(command.equals("quit")) break;
+            if(command.equals("exit")) break;
             out.println(command);
 
         }
         socket.close();
         System.exit(0);
     }
+
 }

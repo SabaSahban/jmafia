@@ -13,13 +13,17 @@ public class ServerConnection implements Runnable{
     public ServerConnection(Socket s) throws IOException {
         server = s;
         in = new BufferedReader(new InputStreamReader(server.getInputStream()));
+
     }
 
     @Override
     public void run() {
             String serverResponse = null;
             try {
-               while (true){
+//                while(true){
+//                    System.out.println("Please type 'start' for the game to begin ");
+//                }
+                while (true){
                    serverResponse = in.readLine();
                    if(serverResponse ==null)break;
                    System.out.println("[Server]"+ serverResponse);
@@ -35,21 +39,22 @@ public class ServerConnection implements Runnable{
                     e.printStackTrace();
                 }
             }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
     }
+
+    public void start(){
+        System.out.println();
+    }
+
+
+
+
+
+
+
+
+
+
+
+
+
 }

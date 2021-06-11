@@ -7,6 +7,7 @@ import java.net.Socket;
 import java.util.ArrayList;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 public class Server{
 
@@ -15,18 +16,21 @@ public class Server{
     private static ArrayList<ClientHandler>clients = new ArrayList<>();
     private static ExecutorService pool = Executors.newFixedThreadPool(4);
     private static ArrayList<String>names = new ArrayList<>();
-    private static ArrayList<Player>players = new ArrayList<>();
+    private static int serverCount = 0;
 
-//    public static ArrayList<String> getNames() {
-//        return names;
-//    }
 
-    public static void main(String[] args) throws IOException {
+    public static int getServerCount() {
+        return serverCount;
+    }
+
+
+
+    public void execute() throws IOException, InterruptedException {
         //serverSocket object listens for client connections
         System.out.println("Server is running...");
         ServerSocket listener = new ServerSocket(PORT);
 
-        while(true) {
+        while(serverCount<3) {
             System.out.println("[server] waiting for client connection");
 
             //makes listener object make a connection
@@ -34,10 +38,50 @@ public class Server{
             Socket client = listener.accept();
 
             System.out.println("[server] connected to client!");
-            ClientHandler clientThread = new ClientHandler(client, clients, names);
+
+            ClientHandler clientThread = new ClientHandler(client, clients, names , serverCount);
             clients.add(clientThread);
+            serverCount++;
             pool.execute(clientThread);
+            clientThread.join();
+
+
         }
 
+        GameHandler gameHandler = new GameHandler(this);
+        gameHandler.execute();
+//        sendToUser("mafia", "shoma mafia hastid");
+
+
+        }
+
+
+
+    public void sendToAll(String msg){
+        for(ClientHandler client : clients){
+            client.sendMessage(msg);
+        }
     }
+
+    public void sendToUser(String role, String msg){
+        for (ClientHandler client : clients){
+            if (client.getRole().equals(role)){
+                client.sendMessage(msg);
+            }
+        }
+    }
+
+
+
+
+
+
+
+
+    public static void main(String[] args) throws IOException, InterruptedException {
+        Server server = new Server();
+        server.execute();
+    }
+
+
 }
