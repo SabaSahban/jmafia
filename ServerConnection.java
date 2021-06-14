@@ -26,7 +26,7 @@ public class ServerConnection implements Runnable{
                 while (true){
                    serverResponse = in.readLine();
                    if(serverResponse ==null)break;
-                   System.out.println("[God]"+ serverResponse);
+                   System.out.println(serverResponse);
                    //baraye save kardan
                }
 
@@ -37,6 +37,7 @@ public class ServerConnection implements Runnable{
             }finally {
                 try {
                     in.close();
+                    out.close();
                 } catch (IOException e) {
                     e.printStackTrace();
                 }

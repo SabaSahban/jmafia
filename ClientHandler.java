@@ -3,10 +3,14 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.Socket;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Locale;
+import java.util.Scanner;
+import java.util.concurrent.TimeUnit;
 
-public class ClientHandler implements Runnable{
-
+public class ClientHandler implements Runnable {
+    private static final int playerNumber = 10;
     private Socket client;
     private String name;
     private BufferedReader in;
@@ -16,14 +20,12 @@ public class ClientHandler implements Runnable{
     private ArrayList<Player> players;
     private ArrayList<String> roles = new ArrayList();
     public String role;
-    private boolean isAlive;
     private int serverCount;
     private Player player;
     private Scanner ScannerIn;
     private int state;
-    private int threadCheck=0;
-
-
+    private int threadCheck;
+    int time = 20000;
 
 
     public String getName() {
@@ -31,29 +33,28 @@ public class ClientHandler implements Runnable{
     }
 
 
-    private void addRoles(){
-
-        if(serverCount==1) Collections.shuffle(roles);
+    private void addRoles() {
         roles.add("mafia");
         roles.add("godFather");
+        roles.add("mafiaDoctor");
         roles.add("civilian");
-        roles.add("civilianDoctor");
-        roles.add("sniper");
         roles.add("therapist");
+        roles.add("sniper");
         roles.add("detective");
         roles.add("mayor");
         roles.add("armor");
-        roles.add("mafiaDoctor");
+        roles.add("civilianDoctor");
+
+//        if (serverCount == 0) Collections.shuffle(roles);
     }
 
 
-
-    public ClientHandler(Socket clientSocket, ArrayList<ClientHandler>clients,ArrayList<String> names, int serverCount, ArrayList<Player> players, int threadCheck) throws IOException {
+    public ClientHandler(Socket clientSocket, ArrayList<ClientHandler> clients, ArrayList<String> names, int serverCount, ArrayList<Player> players, int threadCheck) throws IOException {
 
         this.client = clientSocket;
         this.clients = clients;
         this.names = names;
-        this.serverCount =serverCount;
+        this.serverCount = serverCount;
         this.players = players;
         this.threadCheck = threadCheck;
 
@@ -65,35 +66,122 @@ public class ClientHandler implements Runnable{
     }
 
 
-
-
     @Override
     public void run() {
         welcomeUser();
         giveRoles();
 
-        if (names.size() == 3) {
-            presentationNight();
+//        while (names.size() != playerNumber) {
 //            try {
-//                dayChat();
-//            } catch (IOException e) {
+//                TimeUnit.SECONDS.sleep(5);
+//            } catch (InterruptedException e) {
 //                e.printStackTrace();
 //            }
-        }
-
-
-
+//        }
+        if (names.size()==playerNumber)
+            presentationNight();
 
         try {
-            while (true) {
-                try {
-                    String request = in.readLine();
-                    outToAll(request);
-                } catch (IOException e) {
-                    e.printStackTrace();
+            boolean flag = true;
+            for (Player player : players){
+                if (player.check!=1){
+                    flag = false;
                 }
-//                out.println("salam");
             }
+            out.println("\n-----------------------------\n");
+            out.println("Chat room has started...");
+            out.println("All players have 5 minutes to chat...");
+            int i=1;
+            while (true) {
+
+                if (player.check==1){
+                    long timeS = System.currentTimeMillis();
+                    long timeF = System.currentTimeMillis();
+//                while (timeF - timeS < time && flag) {
+//                    if(player.isMuted()==false){
+//                        try {
+//                            String request = in.readLine();
+//                            outToAll(request);
+//                            timeF = System.currentTimeMillis();
+//                        } catch (IOException e) {
+//                            e.printStackTrace();
+//                        }
+//                    }
+//                    else{
+//                        out.println("Sorry "+ player.getName() +" you can't talk today.");
+//                        break;
+//                    }
+//                }
+                }
+
+
+
+
+                while (true) {
+                    while (names.size()!=playerNumber){
+                        TimeUnit.SECONDS.sleep(5);
+                    }
+
+                    if (role.equals("mafia")) {
+                        mafia();
+                        player.check++;
+                        break;
+
+                    }
+
+                     if (role.equals("godFather")) {
+                        godFather();
+                         player.check++;
+                        break;
+                    }
+
+                    if (role.equals("sniper")) {
+                        sniper();
+                        player.check++;
+                        break;
+                    }
+
+
+                    if (role.equals("mafiaDoctor")) {
+                        mafiaDoctor();
+                        player.check++;
+                        break;
+                    }
+
+                    if (role.equals("civilianDoctor")) {
+                        civilianDoctor();
+                        player.check++;
+                        break;
+                    }
+                    if (role.equals("detective")) {
+                        detective();
+                        player.check++;
+                        break;
+                    }
+                    if (role.equals("armor")) {
+                        armor();
+                        player.check++;
+                        break;
+                    }
+
+                    if (role.equals("therapist")) {
+                        sendToAll(therapist()+" can't talk tomorrow");
+                        player.check++;
+                        break;
+                    }
+                    if (role.equals("mayor")){
+                        mayor();
+                        player.check++;
+                        break;
+                    }
+                    if (role.equals("civilian")){
+                        player.check++;
+                    }
+                }
+                i++;
+            }
+        } catch (IOException | InterruptedException e) {
+            e.printStackTrace();
         } finally {
             System.out.println("[server] did its job");
             //closing our socket
@@ -104,170 +192,259 @@ public class ClientHandler implements Runnable{
                 e.printStackTrace();
             }
         }
-}
-
-
+    }
 
 
     private void outToAll(String msg) {
-        for(ClientHandler aClient : clients){
-            aClient.out.println(name +"-> " + msg);
+        for (ClientHandler aClient : clients) {
+            aClient.out.println(name + "-> " + msg);
 
         }
     }
-    public void sendToAll(String msg){
-        for(ClientHandler aClient : clients){
+    public void sendToAll(String msg) {
+        for (ClientHandler aClient : clients) {
             aClient.out.println(msg);
         }
     }
 
-    public  void welcomeUser(){
+    public void welcomeUser() {
         out.println("Submit your name");
         name = ScannerIn.nextLine();
-        if(name == null){
+        if (name == null) {
             return;
         }
-        synchronized (name){
-            while (names.contains(name)){
+        synchronized (name) {
+            while (names.contains(name)) {
                 out.println("Username already taken, please enter another name");
                 name = ScannerIn.nextLine();
             }
             names.add(name);
         }
-        out.println("NAME ACCEPTED "+name);
-        outToAll(name +" has joined the chat");
+        out.println("NAME ACCEPTED " + name);
+        outToAll(name + " has joined the chat");
     }
-    private  void giveRoles(){
+    private void giveRoles() {
         this.role = roles.get(serverCount);
         out.println(name + " your role is " + this.role);
-        Player player = new Player(name , this.role);
+        Player player = new Player(name, this.role);
         this.player = player;
         players.add(player);
     }
-
-    public synchronized void start(){
+    public synchronized void start() {
         out.println("Type start for the game to begin");
-        String keyword= ScannerIn.nextLine();
-        while (!keyword.equals("start")){
+        String keyword = ScannerIn.nextLine();
+        while (!keyword.equals("start")) {
             out.println("BEzan start dige");
             keyword = ScannerIn.nextLine();
         }
     }
 
-    public String findNameByRole(String role){
-        for(Player player : players){
-            if(player.getRole().equals(role))
+    public String findNameByRole(String role) {
+        for (Player player : players) {
+            if (player.getRole().equals(role))
                 return player.getName();
         }
         return "Player not found";
     }
+    public String findRoleByName(String name) {
+        for (Player player : players) {
+            if (player.getName().equals(name))
+                return player.getRole();
+        }
+        return "Not found";
+    }
 
     public void presentMafia() {
-        for( ClientHandler client : clients){
-            if(client.player.getRole().equals("mafia")){
-                client.out.println(findNameByRole("godFather")+" is our godfather");
-                client.out.println(findNameByRole("mafiaDoctor")+" is our mafiaDoctor");
-            }
-            else if(client.player.getRole().equals("godFather")){
-                client.out.println(findNameByRole("mafia")+" is our mafia");
-                client.out.println(findNameByRole("mafiaDoctor")+" is our mafiaDoctor");
-            }
-            else if(client.player.getRole().equals("mafiaDoctor")){
-                client.out.println(findNameByRole("godFather")+" is our godfather");
-                client.out.println(findNameByRole("mafia")+" is ou r mafia");
+        for (ClientHandler client : clients) {
+            if (client.player.getRole().equals("mafia")) {
+                client.out.println(findNameByRole("godFather") + " is our godfather");
+                client.out.println(findNameByRole("mafiaDoctor") + " is our mafiaDoctor");
+            } else if (client.player.getRole().equals("godFather")) {
+                client.out.println(findNameByRole("mafia") + " is our mafia");
+                client.out.println(findNameByRole("mafiaDoctor") + " is our mafiaDoctor");
+            } else if (client.player.getRole().equals("mafiaDoctor")) {
+                client.out.println(findNameByRole("godFather") + " is our godfather");
+                client.out.println(findNameByRole("mafia") + " is our mafia");
             }
         }
     }
     public void presentMayorCivilianDoctor() {
         for (ClientHandler client : clients) {
-            if(client.player.getRole().equals("civilianDoctor")) {
-                client.out.println(findNameByRole("mayor")+" is our mayor");
-            }
-            else if(client.player.getRole().equals("mayor")) {
-                client.out.println(findNameByRole("civilianDoctor")+" is our civilianDoctor");
+            if (client.player.getRole().equals("civilianDoctor")) {
+                client.out.println(findNameByRole("mayor") + " is our mayor");
+            } else if (client.player.getRole().equals("mayor")) {
+                client.out.println(findNameByRole("civilianDoctor") + " is our civilianDoctor");
             }
         }
     }
     public void presentAllRoles() {
         for (ClientHandler client : clients) {
-            client.out.println("Welcome "+client.player.getRole());
+            client.out.println("Welcome " + client.player.getRole());
+            client.out.println("\n---------------------------------------\n");
         }
     }
-    public void presentationNight(){
+    public void presentationNight() {
         sendToAll("\n---------------------------------------\n");
         sendToAll("Introduction night has been started");
         presentAllRoles();
         presentMafia();
         presentMayorCivilianDoctor();
     }
-    public void dayChat() throws IOException {
-        sendToAll("Type 'ready' if you're ready to vote");
-        while(true){
-            String request = in.readLine();
-            if(request.equals("ready"))
-                break;
-            outToAll(request);
-        }
-    }
-
     public void voting() throws IOException {
-        for (ClientHandler clientHandler : clients){
+        for (ClientHandler clientHandler : clients) {
             clientHandler.out.println("Vote a player out");
             clientHandler.out.println("Please type a name:");
             String name = in.readLine();
-            for(Player player:players){
-                if (player.getName().equals(name)){
+            for (Player player : players) {
+                if (player.getName().equals(name)) {
                     player.vote++;
                 }
             }
         }
     }
     public void mafia() throws IOException {
-        for(ClientHandler clientHandler : clients){
-            if(clientHandler.player.getRole().equals("mafia")||clientHandler.player.getRole().equals("mafiaDoctor")){
+        for (ClientHandler clientHandler : clients) {
+            if (clientHandler.player.getRole().equals("mafia")) {
                 clientHandler.out.println("Choose a player to kill");
+                for (Player player : players){
+                    if (!player.getRole().equals("mafia")&&!player.getRole().equals("godFather")&&!player.getRole().equals("mafiaDoctor")){
+                        clientHandler.out.println(player.getName());
+                    }
+                }
                 String name = in.readLine();
-                for (ClientHandler clientHandler1:clients){
-                    if (clientHandler1.player.getRole().equals("godFather")){
-                        clientHandler1.out.println(clientHandler.player.getRole()+"'s vote is "+name);
+                while(findRoleByName(name).equals("mafia")||findRoleByName(name).equals("godFather")||findRoleByName(name).equals("mafiaDoctor")){
+                    clientHandler.out.println("Invalid name, please choose from civilian team");
+                    name = in.readLine();
+                }
+                clientHandler.out.println("You killed "+name);
+                for (ClientHandler clientHandler1 : clients) {
+                    if (clientHandler1.player.getRole().equals("godFather")) {
+                        clientHandler1.out.println("mafia's vote is " + name);
                     }
                 }
             }
         }
     }
-    public void mafiaDoctor() throws IOException {
-        for(ClientHandler clientHandler : clients){
-            if(clientHandler.player.getRole().equals("mafiaDoctor")){
-                clientHandler.out.println("Who do you wanna treat? (Choose from mafia team)");
-                clientHandler.out.println("Please enter a name");
-                String name = in.readLine();
-                for(Player player:players){
-                    if (player.getName().equals(name)){
-                        player.setAlive(true);
+    public String mafiaDoctor() throws IOException {
+        for (ClientHandler clientHandler : clients) {
+            if (clientHandler.player.getRole().equals("mafiaDoctor")) {
+                clientHandler.out.println("Choose a player to kill");
+                for (Player player : players){
+                    if (!player.getRole().equals("mafia")&&!player.getRole().equals("godFather")&&!player.getRole().equals("mafiaDoctor")){
+                        clientHandler.out.println(player.getName());
                     }
                 }
+                String name = in.readLine();
+                while(findRoleByName(name).equals("mafia")||findRoleByName(name).equals("godFather")||findRoleByName(name).equals("mafiaDoctor")){
+                    clientHandler.out.println("Invalid name, please choose from civilian team");
+                    name = in.readLine();
+                }
+                clientHandler.out.println("You killed "+name);
+                for (ClientHandler clientHandler1 : clients) {
+                    if (clientHandler1.player.getRole().equals("godFather")) {
+                        clientHandler1.out.println("mafiaDoctor's vote is " + name);
+                    }
+                }
+                //treatment
+                clientHandler.out.println("Who do you wanna treat? (Choose from mafia team)");
+                clientHandler.out.println("Please enter a name");
+                name = in.readLine();
+//                while(!(findRoleByName(name).equals("mafia")||findRoleByName(name).equals("godFather")||findRoleByName(name).equals("mafiaDoctor"))){
+//                    clientHandler.out.println("You can only choose from mafia team, try again");
+//                    name = in.readLine();
+//                }
+                clientHandler.out.println("You treated "+name);
+                return name;
             }
         }
+        return "not found";
     }
     public void godFather() throws IOException {
         for (ClientHandler clientHandler : clients) {
-            if(clientHandler.player.getRole().equals("godFather")){
-                System.out.println("Who do you wanna kill?");
-                System.out.println("Please enter a name:");
+            if (clientHandler.player.getRole().equals("godFather")) {
+                clientHandler.out.println("Who do you wanna kill?");
+                for (Player p : players) {
+                    if (!p.getRole().equals("mafia") && !p.getRole().equals("mafiaDoctor") && !p.getRole().equals("godFather")) {
+                        clientHandler.out.println(p.getName());
+                    }
+                }
+                clientHandler.out.println("Please enter a name:");
                 String name = in.readLine();
-                for(Player player:players){
-                    if (player.getName().equals(name)){
+                while(findRoleByName(name).equals("mafia")||findRoleByName(name).equals("godFather")||findRoleByName(name).equals("mafiaDoctor")){
+                    clientHandler.out.println("Invalid name, please choose from civilian team");
+                    name = in.readLine();
+                }
+                clientHandler.out.println("You killed "+name);
+                for (Player player : players) {
+                    if (player.getName().equals(name)) {
                         player.setAlive(false);
                     }
                 }
             }
         }
     }
+    public void sniper() throws IOException {
+        for (ClientHandler clientHandler : clients) {
+            if (clientHandler.player.getRole().equals("sniper")) {
+                clientHandler.out.println("Do you wanna use your power?");
+                clientHandler.out.println("Enter a number");
+                clientHandler.out.println("1- yes");
+                clientHandler.out.println("2- no");
+                String number =in.readLine();
+                if (number.equals("1")) {
+                    clientHandler.out.println("Choose a player to shoot");
+                    clientHandler.out.println("Please enter a name");
+                    String name = in.readLine();
+                    clientHandler.out.println("You shot "+name);
+                    if (!findRoleByName(name).equals("mafia") || !findRoleByName(name).equals("godFather") || !findRoleByName(name).equals("mafia")) {
+                        clientHandler.player.setAlive(false);
+                    }
+                    else {
+                        for (ClientHandler clientHandler1 : clients) {
+                            if (clientHandler1.player.getName().equals(name)) {
+                                clientHandler.player.setAlive(false);
+                            }
+                        }
+                    }
+                }
+                else {
+                    while (!number.equals("1")&&!number.equals("2")){
+                        clientHandler.out.println("Invalid answer");
+                        clientHandler.out.println("Please enter 1 or 2");
+                        number = in.readLine();
+                    }
+                }
+            }
+        }
+    }
+    public String civilianDoctor() throws IOException {
+        for (ClientHandler clientHandler : clients) {
+            if (clientHandler.player.getRole().equals("civilianDoctor")) {
+                out.println("Who do you wanna treat?");
+                for (Player p : players) {
+                    if (!p.getRole().equals("civilianDoctor")) {
+                        out.println(p.getName());
+                    }
+                }
+                out.println("Please enter a name");
+                String name = in.readLine();
+                out.println("You treated "+name);
+            }
+        }
+        return name;
+    }
     public String therapist() throws IOException {
         for (ClientHandler clientHandler : clients) {
             if (clientHandler.player.getRole().equals("therapist")) {
                 clientHandler.out.println("Choose a player to stop from talking");
+                clientHandler.out.println("Player name's are listed here: ");
+                for (Player p : players) {
+                    if (!p.getRole().equals("therapist")) {
+                        clientHandler.out.println(p.getName());
+                    }
+                }
                 String player = in.readLine();
+                clientHandler.out.println("You stopped "+player+ " from talking");
                 for (ClientHandler clientHandler1 : clients) {
                     if (clientHandler1.player.getName().equals(player)) {
                         return clientHandler1.player.getName();
@@ -277,9 +454,108 @@ public class ClientHandler implements Runnable{
         }
         return "not found";
     }
-
-
+    public void detective() throws IOException {
+        for (ClientHandler clientHandler : clients) {
+            if (clientHandler.player.getRole().equals("detective")) {
+                clientHandler.out.println("Enter a player's name to know its role");
+                for (Player player : players){
+                    clientHandler.out.println(player.getName());
+                }
+                String name = in.readLine();
+                if (findRoleByName(name).equals("mafia")||findRoleByName(name).equals("mafiaDoctor")){
+                    clientHandler.out.println(name + " is in mafia team");
+                }
+                else {
+                    clientHandler.out.println(name + " is in civilian team");
+                }
+            }
         }
+    }
+    public void armor() throws IOException {
+        for (ClientHandler clientHandler : clients) {
+            if (clientHandler.player.getRole().equals("armor")) {
+                clientHandler.out.println("Do you wanna use your power?");
+                clientHandler.out.println("Enter a number");
+                clientHandler.out.println("1- yes");
+                clientHandler.out.println("2- no");
+                String number = in.readLine();
+                while (!number.equals("1") && !number.equals("2")) {
+                    clientHandler.out.println("Invalid answer");
+                    clientHandler.out.println("Please enter 1 or 2");
+                    number = in.readLine();
+                }
+                if(number.equals("1")){
+                    for (Player player : players){
+                        if (!player.isAlive()){
+                            clientHandler.out.println(player.getName()+" is dead");
+                        }
+                        else {
+                            clientHandler.out.println("No one has died yet");
+                        }
+                    }
+                }
+            }
+        }
+    }
+    public String mayor() throws IOException {
+        for (ClientHandler clientHandler : clients) {
+            if (clientHandler.player.getRole().equals("mayor")) {
+                clientHandler.out.println("Do you validate players' votes?");
+                clientHandler.out.println("Enter a number");
+                clientHandler.out.println("1- yes");
+                clientHandler.out.println("2- no");
+                String number = in.readLine();
+                while (!number.equals("1") && !number.equals("2")) {
+                    clientHandler.out.println("Invalid answer");
+                    clientHandler.out.println("Please enter 1 or 2");
+                    number = in.readLine();
+                }
+                return number;
+            }
+        }
+        return "not found";
+    }
+    public boolean isContinued(){
+        int mafiaCount=0;
+        int civilianCount=0;
+        for(Player player: players){
+            if(player.isAlive()){
+                if (player.getRole().equals("mafiaDoctor")||player.getRole().equals("godFather")||player.getRole().equals("mafia")){
+                    mafiaCount++;
+                }
+                else {
+                    civilianCount++;
+                }
+            }
+        }
+        if(mafiaCount>=civilianCount || mafiaCount==0){
+            return false;
+        }
+        return true;
+    }
+
+    public void nightReport(){
+
+    }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
