@@ -4,13 +4,13 @@ import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.Socket;
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Locale;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Scanner;
 import java.util.concurrent.TimeUnit;
 
 public class ClientHandler implements Runnable {
-    private static final int playerNumber = 3;
+    private static final int playerNumber = 10;
     private Socket client;
     private String name;
     private BufferedReader in;
@@ -19,6 +19,7 @@ public class ClientHandler implements Runnable {
     private ArrayList<String> names;
     private ArrayList<Player> players;
     private ArrayList<String> roles = new ArrayList();
+    private HashMap<String,Integer> votes;
     public String role;
     private int serverCount;
     private Player player;
@@ -44,12 +45,11 @@ public class ClientHandler implements Runnable {
         roles.add("mayor");
         roles.add("armor");
         roles.add("civilianDoctor");
-
-//        if (serverCount == 0) Collections.shuffle(roles);
+//        Collections.shuffle(roles);
     }
 
 
-    public ClientHandler(Socket clientSocket, ArrayList<ClientHandler> clients, ArrayList<String> names, int serverCount, ArrayList<Player> players, int threadCheck) throws IOException {
+    public ClientHandler(Socket clientSocket, ArrayList<ClientHandler> clients, ArrayList<String> names, int serverCount, ArrayList<Player> players,HashMap<String, Integer>votes) throws IOException {
 
         this.client = clientSocket;
         this.clients = clients;
@@ -57,6 +57,7 @@ public class ClientHandler implements Runnable {
         this.serverCount = serverCount;
         this.players = players;
         this.threadCheck = threadCheck;
+        this.votes = votes;
 
         in = new BufferedReader(new InputStreamReader(client.getInputStream()));
         ScannerIn = new Scanner(client.getInputStream());
@@ -69,6 +70,10 @@ public class ClientHandler implements Runnable {
     @Override
     public void run() {
         try {
+//            while (serverCount!=playerNumber){
+//                TimeUnit.SECONDS.sleep(5);
+//            }
+//            addRoles();
             welcomeUser();
             giveRoles();
             if (names.size()==playerNumber)
@@ -77,12 +82,25 @@ public class ClientHandler implements Runnable {
             int i=1;
             while (true) {
                 for (int j=0 ; j<players.size() ; j++){
-                    if (players.get(j).check!=i){
-                        TimeUnit.SECONDS.sleep(5);
+                    if (players.get(j).checkNight !=i){
+                        TimeUnit.SECONDS.sleep(1);
                         j--;
                     }
                 }
                 chatRoom();
+                voting();
+                for (int j=0 ; j<players.size() ; j++){
+                    if (players.get(j).checkVote !=i){
+                        TimeUnit.SECONDS.sleep(1);
+                        j--;
+                    }
+                }
+//                mayor();
+//                if (mayor().equals("1"))
+                    votingResult();
+//                else
+//                    out.println("Mayor didn't validate your votes");
+//                    out.println("  ");
                 nightGame();
                 i++;
             }
@@ -112,7 +130,6 @@ public class ClientHandler implements Runnable {
             aClient.out.println(msg);
         }
     }
-
     public void welcomeUser() {
         out.println("Submit your name");
         name = ScannerIn.nextLine();
@@ -144,7 +161,6 @@ public class ClientHandler implements Runnable {
             keyword = ScannerIn.nextLine();
         }
     }
-
     public String findNameByRole(String role) {
         for (Player player : players) {
             if (player.getRole().equals(role))
@@ -159,7 +175,6 @@ public class ClientHandler implements Runnable {
         }
         return "Not found";
     }
-
     public void presentMafia() {
         for (ClientHandler client : clients) {
             if (client.player.getRole().equals("mafia")) {
@@ -195,18 +210,6 @@ public class ClientHandler implements Runnable {
         presentAllRoles();
         presentMafia();
         presentMayorCivilianDoctor();
-    }
-    public void voting() throws IOException {
-        for (ClientHandler clientHandler : clients) {
-            clientHandler.out.println("Vote a player out");
-            clientHandler.out.println("Please type a name:");
-            String name = in.readLine();
-            for (Player player : players) {
-                if (player.getName().equals(name)) {
-                    player.vote++;
-                }
-            }
-        }
     }
     public void mafia() throws IOException {
         for (ClientHandler clientHandler : clients) {
@@ -440,59 +443,58 @@ public class ClientHandler implements Runnable {
         return true;
     }
     private void nightGame() throws IOException, InterruptedException {
-            while (names.size()!=playerNumber){
-                TimeUnit.SECONDS.sleep(5);
-            }
-            if (role.equals("mafia")) {
-                mafia();
-                player.check++;
-                return;
-            }
-            if (role.equals("godFather")) {
-                godFather();
-                player.check++;
-                return;
-            }
-            if (role.equals("sniper")) {
-                sniper();
-                player.check++;
-                return;
-            }
-            if (role.equals("mafiaDoctor")) {
-                mafiaDoctor();
-                player.check++;
-                return;
-            }
-            if (role.equals("civilianDoctor")) {
-                civilianDoctor();
-                player.check++;
-                return;
-            }
-            if (role.equals("detective")) {
-                detective();
-                player.check++;
-                return;
-            }
-            if (role.equals("armor")) {
-                armor();
-                player.check++;
-                return;
-            }
-            if (role.equals("therapist")) {
-                sendToAll(therapist()+" can't talk tomorrow");
-                player.check++;
-                return;
-            }
-            if (role.equals("mayor")){
-                mayor();
-                player.check++;
-                return;
-            }
-            if (role.equals("civilian")){
-                player.check++;
-                return;
-            }
+        while (names.size()!=playerNumber){
+            TimeUnit.SECONDS.sleep(1);
         }
+        if (role.equals("mafia")) {
+            mafia();
+            player.checkNight++;
+            return;
+        }
+        if (role.equals("godFather")) {
+            godFather();
+            player.checkNight++;
+            return;
+        }
+        if (role.equals("sniper")) {
+            sniper();
+            player.checkNight++;
+            return;
+        }
+        if (role.equals("mafiaDoctor")) {
+            mafiaDoctor();
+            player.checkNight++;
+            return;
+        }
+        if (role.equals("civilianDoctor")) {
+            civilianDoctor();
+            player.checkNight++;
+            return;
+        }
+        if (role.equals("detective")) {
+            detective();
+            player.checkNight++;
+            return;
+        }
+        if (role.equals("armor")) {
+            armor();
+            player.checkNight++;
+            return;
+        }
+        if (role.equals("therapist")) {
+            sendToAll(therapist()+" can't talk tomorrow");
+            player.checkNight++;
+            return;
+        }
+        if (role.equals("mayor")){
+            player.checkNight++;
+            return;
+        }
+        if (role.equals("civilian")){
+            player.checkNight++;
+            return;
+        }
+    }
     public void chatRoom() throws InterruptedException {
         out.println("\n-----------------------------\n");
         out.println("Chat room has started...");
@@ -515,11 +517,7 @@ public class ClientHandler implements Runnable {
             }
         }
     }
-
     public void nightReport(){
-        if (!player.isAlive()){
-            out.println("Rip");
-        }
         for (Player player : players){
             if(!player.isAlive()){
                 out.println(player.getName()+" is dead.");
@@ -527,6 +525,32 @@ public class ClientHandler implements Runnable {
             }
         }
     }
+    public void voting() throws IOException {
+        out.println("Vote a player out");
+        out.println("Please type a name:");
+        String name = in.readLine();
+        for (Player player : players) {
+            if (player.getName().equals(name)) {
+                player.vote++;
+                votes.put(name,player.getVote());
+            }
+        }
+        player.checkVote++;
+    }
+    public void votingResult(){
+        Map.Entry<String, Integer> maxEntry = null;
+        for (Map.Entry<String, Integer> entry : votes.entrySet())
+        {
+            if (maxEntry == null || entry.getValue().compareTo(maxEntry.getValue()) > 0)
+            {
+                maxEntry = entry;
+            }
+        }
+        out.println("Players voted out "+maxEntry+" votes");
+    }
+
+
+
 
 
 

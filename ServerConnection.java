@@ -18,30 +18,30 @@ public class ServerConnection implements Runnable{
 
     @Override
     public void run() {
-            String serverResponse = null;
-            try {
+        String serverResponse = null;
+        try {
 //                while(true){
 //                    System.out.println("Please type 'start' for the game to begin ");
 //                }
-                while (true){
-                   serverResponse = in.readLine();
-                   if(serverResponse ==null)break;
-                   System.out.println(serverResponse);
-                   //baraye save kardan
-               }
-
+            while (true){
+                serverResponse = in.readLine();
+                if(serverResponse ==null)break;
+                System.out.println(serverResponse);
+                //baraye save kardan
             }
 
-            catch (IOException e) {
+        }
+
+        catch (IOException e) {
+            e.printStackTrace();
+        }finally {
+            try {
+                in.close();
+                out.close();
+            } catch (IOException e) {
                 e.printStackTrace();
-            }finally {
-                try {
-                    in.close();
-                    out.close();
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
             }
+        }
     }
 
 

@@ -5,7 +5,8 @@ public class Player {
     private String role;
     public int vote = 0;
     private boolean isMuted;
-    public int check;
+    public int checkNight;
+    public int checkVote;
     private int attempt;
 
 
@@ -22,7 +23,7 @@ public class Player {
         this.isAlive = true;
         this.isMuted = false;
         this.role = role;
-        this.check = 0;
+        this.checkNight = 0;
 
     }
 

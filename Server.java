@@ -5,20 +5,22 @@ import java.io.PrintWriter;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 
 public class Server{
 
-    private static final int PORT = 8181;
-    private static final int playerNumber = 3;
+    private static final int PORT = 6010;
+    private static final int playerNumber = 10;
 
 
     private static ArrayList<ClientHandler>clients = new ArrayList<>();
     private static ExecutorService pool = Executors.newFixedThreadPool(playerNumber);
     private static ArrayList<String>names = new ArrayList<>();
     private ArrayList<Player>players = new ArrayList<>();
+    private HashMap<String,Integer> votes = new HashMap<>();
     private static int serverCount = 0;
     public int threadCheck = 0;
 
@@ -37,7 +39,7 @@ public class Server{
 
             System.out.println("[server] connected to client!");
 
-            ClientHandler clientThread = new ClientHandler(client, clients, names, serverCount, players, threadCheck);
+            ClientHandler clientThread = new ClientHandler(client, clients, names, serverCount, players, votes);
 
             clients.add(clientThread);
             serverCount++;
@@ -46,8 +48,6 @@ public class Server{
 
 
 
-        GameHandler gameHandler = new GameHandler(this);
-        gameHandler.execute();
 
 
 
