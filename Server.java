@@ -1,18 +1,20 @@
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.PrintWriter;
+import java.lang.reflect.Array;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 
+/**
+ * The type Server.
+ */
 public class Server{
 
-    private static final int PORT = 6010;
+    private static final int PORT = 9696;
     private static final int playerNumber = 10;
 
 
@@ -20,15 +22,17 @@ public class Server{
     private static ExecutorService pool = Executors.newFixedThreadPool(playerNumber);
     private static ArrayList<String>names = new ArrayList<>();
     private ArrayList<Player>players = new ArrayList<>();
+    private ArrayList<String>roles = new ArrayList<>();
     private HashMap<String,Integer> votes = new HashMap<>();
     private static int serverCount = 0;
-    public int threadCheck = 0;
 
 
-
-
-
-    public void execute() throws IOException, InterruptedException {
+    /**
+     * Execute.
+     *
+     * @throws IOException the io exception
+     */
+    public void execute() throws IOException{
         System.out.println("Server is running...");
         ServerSocket listener = new ServerSocket(PORT);
 
@@ -39,20 +43,32 @@ public class Server{
 
             System.out.println("[server] connected to client!");
 
-            ClientHandler clientThread = new ClientHandler(client, clients, names, serverCount, players, votes);
+            ClientHandler clientThread = new ClientHandler(client, clients, names, serverCount, players, votes, roles);
 
+            roles.add("mafia");
+            roles.add("mayor");
+            roles.add("godFather");
+            roles.add("mafiaDoctor");
+            roles.add("civilian");
+            roles.add("therapist");
+            roles.add("sniper");
+            roles.add("detective");
+            roles.add("armor");
+            roles.add("civilianDoctor");
+            if (serverCount==0) Collections.shuffle(roles);
             clients.add(clientThread);
             serverCount++;
             pool.execute(clientThread);
         }
-
-
-
-
-
-
     }
-    public static void main (String[]args) throws IOException, InterruptedException {
+
+    /**
+     * Main.
+     *
+     * @param args the args
+     * @throws IOException the io exception
+     */
+    public static void main (String[]args) throws IOException{
         Server server = new Server();
         server.execute();
     }

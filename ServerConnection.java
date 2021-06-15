@@ -4,12 +4,21 @@ import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.Socket;
 
+/**
+ * The type Server connection.
+ */
 public class ServerConnection implements Runnable{
 
     private Socket server;
     private BufferedReader in;
     private PrintWriter out;
 
+    /**
+     * Instantiates a new Server connection.
+     *
+     * @param s the s
+     * @throws IOException the io exception
+     */
     public ServerConnection(Socket s) throws IOException {
         server = s;
         in = new BufferedReader(new InputStreamReader(server.getInputStream()));
@@ -43,19 +52,4 @@ public class ServerConnection implements Runnable{
             }
         }
     }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 }
