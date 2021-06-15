@@ -10,7 +10,7 @@ import java.util.Scanner;
 import java.util.concurrent.TimeUnit;
 
 public class ClientHandler implements Runnable {
-    private static final int playerNumber = 10;
+    private static final int playerNumber = 3;
     private Socket client;
     private String name;
     private BufferedReader in;
@@ -68,116 +68,22 @@ public class ClientHandler implements Runnable {
 
     @Override
     public void run() {
-        welcomeUser();
-        giveRoles();
-
-//        while (names.size() != playerNumber) {
-//            try {
-//                TimeUnit.SECONDS.sleep(5);
-//            } catch (InterruptedException e) {
-//                e.printStackTrace();
-//            }
-//        }
-        if (names.size()==playerNumber)
-            presentationNight();
-
         try {
-            boolean flag = true;
-            for (Player player : players){
-                if (player.check!=1){
-                    flag = false;
-                }
-            }
-            out.println("\n-----------------------------\n");
-            out.println("Chat room has started...");
-            out.println("All players have 5 minutes to chat...");
+            welcomeUser();
+            giveRoles();
+            if (names.size()==playerNumber)
+                presentationNight();
+            nightGame();
             int i=1;
             while (true) {
-
-                if (player.check==1){
-                    long timeS = System.currentTimeMillis();
-                    long timeF = System.currentTimeMillis();
-//                while (timeF - timeS < time && flag) {
-//                    if(player.isMuted()==false){
-//                        try {
-//                            String request = in.readLine();
-//                            outToAll(request);
-//                            timeF = System.currentTimeMillis();
-//                        } catch (IOException e) {
-//                            e.printStackTrace();
-//                        }
-//                    }
-//                    else{
-//                        out.println("Sorry "+ player.getName() +" you can't talk today.");
-//                        break;
-//                    }
-//                }
-                }
-
-
-
-
-                while (true) {
-                    while (names.size()!=playerNumber){
+                for (int j=0 ; j<players.size() ; j++){
+                    if (players.get(j).check!=i){
                         TimeUnit.SECONDS.sleep(5);
-                    }
-
-                    if (role.equals("mafia")) {
-                        mafia();
-                        player.check++;
-                        break;
-
-                    }
-
-                     if (role.equals("godFather")) {
-                        godFather();
-                         player.check++;
-                        break;
-                    }
-
-                    if (role.equals("sniper")) {
-                        sniper();
-                        player.check++;
-                        break;
-                    }
-
-
-                    if (role.equals("mafiaDoctor")) {
-                        mafiaDoctor();
-                        player.check++;
-                        break;
-                    }
-
-                    if (role.equals("civilianDoctor")) {
-                        civilianDoctor();
-                        player.check++;
-                        break;
-                    }
-                    if (role.equals("detective")) {
-                        detective();
-                        player.check++;
-                        break;
-                    }
-                    if (role.equals("armor")) {
-                        armor();
-                        player.check++;
-                        break;
-                    }
-
-                    if (role.equals("therapist")) {
-                        sendToAll(therapist()+" can't talk tomorrow");
-                        player.check++;
-                        break;
-                    }
-                    if (role.equals("mayor")){
-                        mayor();
-                        player.check++;
-                        break;
-                    }
-                    if (role.equals("civilian")){
-                        player.check++;
+                        j--;
                     }
                 }
+                chatRoom();
+                nightGame();
                 i++;
             }
         } catch (IOException | InterruptedException e) {
@@ -533,9 +439,93 @@ public class ClientHandler implements Runnable {
         }
         return true;
     }
+    private void nightGame() throws IOException, InterruptedException {
+            while (names.size()!=playerNumber){
+                TimeUnit.SECONDS.sleep(5);
+            }
+            if (role.equals("mafia")) {
+                mafia();
+                player.check++;
+                return;
+            }
+            if (role.equals("godFather")) {
+                godFather();
+                player.check++;
+                return;
+            }
+            if (role.equals("sniper")) {
+                sniper();
+                player.check++;
+                return;
+            }
+            if (role.equals("mafiaDoctor")) {
+                mafiaDoctor();
+                player.check++;
+                return;
+            }
+            if (role.equals("civilianDoctor")) {
+                civilianDoctor();
+                player.check++;
+                return;
+            }
+            if (role.equals("detective")) {
+                detective();
+                player.check++;
+                return;
+            }
+            if (role.equals("armor")) {
+                armor();
+                player.check++;
+                return;
+            }
+            if (role.equals("therapist")) {
+                sendToAll(therapist()+" can't talk tomorrow");
+                player.check++;
+                return;
+            }
+            if (role.equals("mayor")){
+                mayor();
+                player.check++;
+                return;
+            }
+            if (role.equals("civilian")){
+                player.check++;
+                return;
+            }
+        }
+    public void chatRoom() throws InterruptedException {
+        out.println("\n-----------------------------\n");
+        out.println("Chat room has started...");
+        out.println("All players have 5 minutes to chat...");
+        long timeS = System.currentTimeMillis();
+        long timeF = System.currentTimeMillis();
+        while (timeF - timeS < time) {
+            if(!player.isMuted()){
+                try {
+                    String request = in.readLine();
+                    outToAll(request);
+                    timeF = System.currentTimeMillis();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+            else{
+                out.println("Sorry "+ player.getName() +" you can't talk today.");
+                TimeUnit.SECONDS.sleep(300);
+            }
+        }
+    }
 
     public void nightReport(){
-
+        if (!player.isAlive()){
+            out.println("Rip");
+        }
+        for (Player player : players){
+            if(!player.isAlive()){
+                out.println(player.getName()+" is dead.");
+                players.remove(player);
+            }
+        }
     }
 
 

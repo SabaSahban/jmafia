@@ -11,8 +11,8 @@ import java.util.concurrent.Executors;
 
 public class Server{
 
-    private static final int PORT = 9898;
-    private static final int playerNumber = 10;
+    private static final int PORT = 8181;
+    private static final int playerNumber = 3;
 
 
     private static ArrayList<ClientHandler>clients = new ArrayList<>();
